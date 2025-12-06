@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3-Way Merge Diff Viewer (Full Green)</title>
+    <!-- Load Monaco Editor Styles via CDN -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.css">
+    
+    <style>
+        /* --- RESET & BASE STYLES --- */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ededed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- LAYOUT UTILS --- */
+        .flex { display: flex; }
+        .flex-col { display: flex; flex-direction: column; }
+        .flex-1 { flex: 1; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+
+        /* --- TOOLBAR & HEADER --- */
+        .toolbar {
+            height: 40px; background-color: #f2f2f2; border-bottom: 1px solid #d1d1d1;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 30;
+        }
+        .header {
+            height: 28px; background-color: #e8e8e8; border-bottom: 1px solid #c0c0c0;
+            display: flex; font-size: 11px; font-weight: 600; color: #666; z-index: 20;
+        }
+        .header-col { padding: 0 8px; display: flex; align-items: center; }
+        .header-center { background-color: #fff9c4; justify-content: center; }
+
+        /* --- MAIN CONTAINER --- */
+        #main-container {
+            flex: 1; display: flex; position: relative;
+            background-color: #a0a0a0; min-height: 0;
+        }
+
+        /* --- EDITOR CONTAINERS --- */
+        .editor-container {
+            background-color: white;
+            position: relative;
+            overflow: hidden; /* Monaco handles scroll */
+        }
+        .editor-center {
+            flex: 1.2;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- GAPS & SVG --- */
+        .gap-col {
+            width: 80px; background-color: #f0f0f0;
+            border-left: 1px solid #d1d1d1; border-right: 1px solid #d1d1d1;
+            flex-shrink: 0; z-index: 0; position: relative;
+        }
+        #svg-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* --- BUTTON OVERLAYS --- */
+        .action-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50;
+            pointer-events: none; 
+        }
+
+        .action-btn {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            pointer-events: auto;
+            background: transparent;
+            border: 1px solid transparent;
+            box-shadow: none;
+            transition: all 0.2s ease;
+            font-size: 0; 
+        }
+
+        .action-btn:hover {
+            background: white;
+            border-color: #d32f2f;
+            color: #d32f2f;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transform: scale(1.1);
+        }
+
+        /* --- DYNAMIC STYLES --- */
+        .diff-conflict { 
+            background-color: rgba(255, 100, 100, 0.25) !important; 
+        }
+        .diff-marker { 
+            background-color: rgba(255, 0, 0, 0.4); 
+            font-weight: bold; color: #500;
+        }
+        
+        /* Màu nền xanh (Full Highlight) */
+        .diff-resolved-green {
+            background-color: rgba(100, 255, 100, 0.2) !important; 
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="toolbar">
+        <div class="flex-center" style="gap: 8px; color: #555;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span style="font-weight:bold; font-size:13px;">Monaco 3-Way Merge (Full Green)</span>
+        </div>
+        <div><span style="font-size: 11px; color: #666; margin-right: 10px;">Resolved blocks fully highlighted in green</span></div>
+    </div>
+
+    <div class="header">
+        <div class="header-col flex-1" style="border-right: 1px solid #c0c0c0;">Local Changes</div>
+        <div class="header-col" style="width: 80px; background: #ddd; border-right: 1px solid #c0c0c0;"></div>
+        <div class="header-col flex-1 header-center" style="flex: 1.2; border-right: 1px solid #c0c0c0;">Merged Result</div>
+        <div class="header-col" style="width: 80px; background: #ddd; border-right: 1px solid #c0c0c0;"></div>
+        <div class="header-col flex-1">Remote Changes</div>
+    </div>
+
+    <div id="main-container">
+        <svg id="svg-layer"></svg>
+        <div id="container-left" class="editor-container flex-1" style="border-right: 1px solid #d1d1d1;"></div>
+        <div class="gap-col"></div>
+        <div id="container-center" class="editor-container editor-center" style="border-right: 1px solid #d1d1d1;"></div>
+        <div class="gap-col"></div>
+        <div id="container-right" class="editor-container flex-1"></div>
+        <div id="actions-overlay" class="action-overlay"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+    <script>
+        // --- DATA GENERATOR ---
+        const segments = [
+            { type: 'common', text: ["package com.example.service;", "import java.util.*;", "import java.util.stream.Collectors;", "", "public class UserService {", "", "    private final UserRepository repo;", "    private final NotificationService notifier;"] },
+            { type: 'conflict', local: ["    // Local: Constructor Injection", "    public UserService(UserRepository repo, NotificationService notifier) {", "        this.repo = repo;", "        this.notifier = notifier;", "    }"], remote: ["    // Remote: Single Arg Constructor", "    public UserService(UserRepository repo) {", "        this.repo = repo;", "        this.notifier = new EmailNotificationService();", "    }"] },
+            { type: 'common', text: ["", "    // --- CRUD OPERATIONS ---", ""] },
+            { type: 'conflict', local: ["    public User createUser(String name, String email) {", "        if (!email.contains('@')) throw new IllegalArgumentException('Invalid Email');", "        return repo.save(new User(name, email));", "    }"], remote: ["    public User createUser(String name, String email) {", "        if (name.isEmpty()) throw new IllegalArgumentException('Name required');", "        return repo.save(new User(name, email));", "    }"] },
+            { type: 'common', text: [""] },
+            { type: 'conflict', local: ["    public void updateUser(User user) {", "        if (repo.exists(user.getId())) {", "            repo.save(user);", "        }", "    }"], remote: ["    public User updateUser(User user) {", "        return repo.save(user);", "    }"] },
+            { type: 'common', text: [""] },
+            { type: 'conflict', local: ["    public void deleteUser(String id) {", "        repo.deleteById(id);", "    }"], remote: ["    public void deleteUser(String id) {", "        System.out.println('Deleting: ' + id);", "        repo.softDelete(id);", "    }"] },
+            { type: 'common', text: ["", "    // --- SEARCH & UTILS ---", ""] },
+            { type: 'conflict', local: ["    public Optional<User> findById(String id) { return repo.findById(id); }"], remote: ["    public User findById(String id) { return repo.getOne(id); }"] },
+            { type: 'common', text: [""] },
+            { type: 'conflict', local: ["    public void importUsers(List<User> users) { repo.saveAll(users); }"], remote: ["    public void importUsers(List<User> users) { users.forEach(repo::save); }"] },
+            { type: 'common', text: ["", "    // --- SECURITY & CONFIG ---", ""] },
+            { type: 'conflict', local: ["    public void resetPassword(String userId) {", "        String tempPass = generateRandomString(8);", "        notifier.send(userId, 'New Pass: ' + tempPass);", "    }"], remote: ["    public void resetPassword(String userId) {", "        // Remote enforces complex password policy", "        notifier.sendResetLink(userId);", "    }"] },
+            { type: 'common', text: [""] },
+            { type: 'conflict', local: ["    public void assignRole(String userId, String role) { repo.setRole(userId, role); }"], remote: ["    public void assignRole(String userId, Role role) { repo.setRole(userId, role.name()); }"] },
+            { type: 'common', text: [""] },
+            { type: 'conflict', local: ["    private void logAction(String action) { System.out.println(new Date() + action); }"], remote: ["    private void logAction(String action) { Logger.info(action); }"] },
+            { type: 'common', text: [""] },
+            { type: 'conflict', local: ["    // Cache TTL: 10 mins"], remote: ["    // Cache TTL: 30 mins"] },
+            { type: 'common', text: ["}"] }
+        ];
+
+        let LEFT_LINES = [], CENTER_LINES_INIT = [], RIGHT_LINES = [], DIFF_MAPPING = [];
+
+        (function buildData() {
+            let leftIdx = 0, centerIdx = 0, rightIdx = 0, conflictId = 1;
+            segments.forEach(seg => {
+                if (seg.type === 'common') {
+                    seg.text.forEach(l => { LEFT_LINES.push(l); CENTER_LINES_INIT.push(l); RIGHT_LINES.push(l); });
+                    leftIdx += seg.text.length; centerIdx += seg.text.length; rightIdx += seg.text.length;
+                } else if (seg.type === 'conflict') {
+                    seg.local.forEach(l => LEFT_LINES.push(l));
+                    seg.remote.forEach(l => RIGHT_LINES.push(l));
+                    
+                    const startC = centerIdx;
+                    CENTER_LINES_INIT.push("<<<<<<< HEAD");
+                    seg.local.forEach(l => CENTER_LINES_INIT.push(l));
+                    CENTER_LINES_INIT.push("=======");
+                    seg.remote.forEach(l => CENTER_LINES_INIT.push(l));
+                    CENTER_LINES_INIT.push(">>>>>>> feature/branch");
+                    
+                    const lenC = 1 + seg.local.length + 1 + seg.remote.length + 1;
+                    
+                    DIFF_MAPPING.push({
+                        id: conflictId++,
+                        left: { start: leftIdx, end: leftIdx + seg.local.length - 1 },
+                        center: { start: startC, end: startC + lenC - 1 },
+                        right: { start: rightIdx, end: rightIdx + seg.remote.length - 1 },
+                        color: 'rgba(255, 100, 100, 0.25)', 
+                        bgClass: 'diff-conflict',
+                        resolvedSide: null
+                    });
+
+                    leftIdx += seg.local.length; rightIdx += seg.remote.length; centerIdx += lenC;
+                }
+            });
+        })();
+
+        // --- HISTORY & STATE ---
+        const resolvedStateHistory = new Map();
+        function captureResolvedState(versionId) {
+            const state = {};
+            DIFF_MAPPING.forEach(d => { if (d.resolvedSide) state[d.id] = d.resolvedSide; });
+            resolvedStateHistory.set(versionId, state);
+        }
+        function restoreResolvedState(versionId) {
+            const state = resolvedStateHistory.get(versionId) || {};
+            DIFF_MAPPING.forEach(d => { d.resolvedSide = state[d.id] || null; });
+        }
+
+        // --- CHECKER ---
+        function checkConflictMarkers(diff, model) {
+            if (diff.resolvedSide) return false;
+            const lineCount = model.getLineCount();
+            const start = Math.max(1, diff.center.start + 1);
+            const end = Math.min(lineCount, diff.center.end + 1);
+            if (start > end) return false;
+            const rangeContent = model.getValueInRange(new monaco.Range(start, 1, end, 9999));
+            return rangeContent.includes('<<<<<<<') && rangeContent.includes('>>>>>>>');
+        }
+
+        // --- MONACO ---
+        let editorLeft, editorCenter, editorRight;
+        let decorationsLeft = [], decorationsCenter = [], decorationsRight = [];
+        const svgLayer = document.getElementById('svg-layer');
+        const actionsOverlay = document.getElementById('actions-overlay');
+
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            const commonOptions = { language: 'java', theme: 'vs', scrollBeyondLastLine: false, minimap: { enabled: false }, lineNumbers: 'on', renderLineHighlight: 'none', scrollbar: { vertical: 'hidden', horizontal: 'auto' }, readOnly: true, folding: false };
+            
+            editorLeft = monaco.editor.create(document.getElementById('container-left'), { value: LEFT_LINES.join('\n'), ...commonOptions });
+            editorCenter = monaco.editor.create(document.getElementById('container-center'), { value: CENTER_LINES_INIT.join('\n'), ...commonOptions, readOnly: false });
+            editorRight = monaco.editor.create(document.getElementById('container-right'), { value: RIGHT_LINES.join('\n'), ...commonOptions });
+
+            // --- INDEX SHIFTING LOGIC ---
+            editorCenter.onDidChangeModelContent((e) => {
+                const model = editorCenter.getModel();
+                const versionId = model.getAlternativeVersionId();
+
+                e.changes.forEach(change => {
+                    const linesAdded = (change.text.match(/\n/g) || []).length;
+                    const linesRemoved = change.range.endLineNumber - change.range.startLineNumber;
+                    const delta = linesAdded - linesRemoved;
+
+                    if (delta !== 0) {
+                        DIFF_MAPPING.forEach(d => {
+                            const diffStartLine = d.center.start + 1;
+                            const diffEndLine = d.center.end + 1;
+                            if (change.range.endLineNumber < diffStartLine) {
+                                d.center.start += delta; d.center.end += delta;
+                            } else if (change.range.endLineNumber <= diffEndLine) {
+                                d.center.end += delta;
+                            }
+                        });
+                    }
+                });
+
+                if (e.isUndoing || e.isRedoing) restoreResolvedState(versionId);
+                else captureResolvedState(versionId);
+
+                updateDecorations();
+                drawLayerElements();
+                updateActionButtons();
+            });
+
+            captureResolvedState(editorCenter.getModel().getAlternativeVersionId());
+
+            let isSyncing = false;
+            const sync = (src) => { if(!isSyncing){ isSyncing=true; const t=src.getScrollTop(); [editorLeft, editorCenter, editorRight].forEach(e=>e!==src && e.setScrollTop(t)); drawLayerElements(); updateActionButtons(); isSyncing=false; }};
+            [editorLeft, editorCenter, editorRight].forEach(e => e.onDidScrollChange(() => sync(e)));
+            window.addEventListener('resize', () => { [editorLeft, editorCenter, editorRight].forEach(e=>e.layout()); drawLayerElements(); updateActionButtons(); });
+
+            updateDecorations();
+            setTimeout(() => { drawLayerElements(); updateActionButtons(); }, 200);
+        });
+
+        // --- DECORATIONS (HIGHLIGHT CẢ 3 BÊN) ---
+        function updateDecorations() {
+            const createDeco = (range, className) => ({ range: new monaco.Range(range.start + 1, 1, range.end + 1, 1), options: { isWholeLine: true, className } });
+            const model = editorCenter.getModel();
+            const txt = model.getValue().split('\n');
+            let dl=[], dc=[], dr=[];
+
+            DIFF_MAPPING.forEach(d => {
+                if (!d.resolvedSide) {
+                    if (checkConflictMarkers(d, model)) {
+                        dc.push(createDeco(d.center, d.bgClass));
+                        const end = Math.min(d.center.end, txt.length - 1);
+                        for(let i=d.center.start; i<=end; i++) {
+                            if ((txt[i]||"").match(/^(<<<<<<<|=======|>>>>>>>)/)) {
+                                dc.push({ range: new monaco.Range(i+1,1,i+1,1), options: { isWholeLine: true, className: 'diff-marker' } });
+                            }
+                        }
+                        if (d.left) dl.push(createDeco(d.left, d.bgClass));
+                        if (d.right) dr.push(createDeco(d.right, d.bgClass));
+                    }
+                } else {
+                    // RESOLVED: Highlight XANH cả 3 bên
+                    const greenClass = 'diff-resolved-green';
+                    dl.push(createDeco(d.left, greenClass));
+                    dc.push(createDeco(d.center, greenClass));
+                    dr.push(createDeco(d.right, greenClass));
+                }
+            });
+            decorationsLeft = editorLeft.deltaDecorations(decorationsLeft, dl);
+            decorationsCenter = editorCenter.deltaDecorations(decorationsCenter, dc);
+            decorationsRight = editorRight.deltaDecorations(decorationsRight, dr);
+        }
+
+        // --- SVG: VẼ KHỐI NỐI ĐẦY ĐỦ (Cả Đỏ và Xanh) ---
+        function drawLayerElements() {
+            if (!editorLeft) return;
+            const getH = (e) => e.getOption(monaco.editor.EditorOption.lineHeight);
+            const rL = document.getElementById('container-left').getBoundingClientRect();
+            const rC = document.getElementById('container-center').getBoundingClientRect();
+            const rR = document.getElementById('container-right').getBoundingClientRect();
+            const rMain = document.getElementById('main-container').getBoundingClientRect();
+            
+            const xL_end = rL.width;
+            const xC_start = rC.left - rMain.left;
+            const xC_end = xC_start + rC.width;
+            const xR_start = rR.left - rMain.left;
+
+            let svg = '';
+            const model = editorCenter.getModel();
+            const LC = model.getLineCount();
+
+            // MÀU XANH CHO RESOLVED (Tương tự d.color nhưng là màu xanh)
+            const greenFill = "rgba(100, 255, 100, 0.2)"; 
+
+            DIFF_MAPPING.forEach(d => {
+                const getY = (ed, idx) => ed.getTopForLineNumber(idx+1) - ed.getScrollTop();
+                
+                // --- SETUP TỌA ĐỘ ---
+                if (d.center.start < 0 || d.center.end >= LC || d.center.start > d.center.end) return;
+
+                // Xác định màu fill
+                let fillColor = d.color; // Mặc định Đỏ
+                if (d.resolvedSide) {
+                    fillColor = greenFill; // Đổi sang Xanh nếu đã Resolve
+                } else {
+                    // Nếu chưa resolve, cần check markers
+                    if (!checkConflictMarkers(d, model)) return;
+                }
+
+                // --- VẼ KHỐI (Dùng chung logic cho cả Đỏ và Xanh) ---
+                const yc1 = getY(editorCenter, d.center.start);
+                const yc2 = getY(editorCenter, d.center.end) + getH(editorCenter);
+
+                if (d.left) {
+                    const h = getH(editorLeft);
+                    const yl1 = getY(editorLeft, d.left.start);
+                    const yl2 = getY(editorLeft, d.left.end) + h;
+                    svg += mkFillPath(xL_end, yl1, yl2, xC_start, yc1, yc2, fillColor);
+                }
+                if (d.right) {
+                    const h = getH(editorRight);
+                    const yr1 = getY(editorRight, d.right.start);
+                    const yr2 = getY(editorRight, d.right.end) + h;
+                    svg += mkFillPath(xC_end, yc1, yc2, xR_start, yr1, yr2, fillColor);
+                }
+            });
+            svgLayer.innerHTML = svg;
+        }
+
+        // Vẽ khối nối (Bezier Fill)
+        function mkFillPath(x1, y1a, y1b, x2, y2a, y2b, fill) {
+            const cp = (x2 - x1) * 0.5;
+            return `<path d="M ${x1} ${y1a} C ${x1+cp} ${y1a}, ${x2-cp} ${y2a}, ${x2} ${y2a} L ${x2} ${y2b} C ${x2-cp} ${y2b}, ${x1+cp} ${y1b}, ${x1} ${y1b} Z" fill="${fill}" />`;
+        }
+
+        // --- ACTIONS ---
+        function updateActionButtons() {
+            actionsOverlay.innerHTML = '';
+            if (!editorLeft) return;
+            const rL = document.getElementById('container-left').getBoundingClientRect();
+            const rR = document.getElementById('container-right').getBoundingClientRect();
+            const rMain = document.getElementById('main-container').getBoundingClientRect();
+            const btnSz = 24; 
+            const model = editorCenter.getModel();
+
+            DIFF_MAPPING.forEach(d => {
+                if (d.resolvedSide) return;
+                if (!checkConflictMarkers(d, model)) return;
+
+                const getY = (ed, s, e) => (ed.getTopForLineNumber(s+1) - ed.getScrollTop()) + ((e-s+1)*ed.getOption(monaco.editor.EditorOption.lineHeight)/2) - (btnSz/2);
+
+                if (d.left) {
+                    const top = getY(editorLeft, d.left.start, d.left.end);
+                    if (top > -btnSz && top < rMain.height) createBtn(top, (rL.right - rMain.left) + 4, d.id, 'left', '<path d="M13 17l5-5-5-5M6 17l5-5-5-5"></path>');
+                }
+                if (d.right) {
+                    const top = getY(editorRight, d.right.start, d.right.end);
+                    if (top > -btnSz && top < rMain.height) createBtn(top, (rR.left - rMain.left) - btnSz - 4, d.id, 'right', '<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"></path>');
+                }
+            });
+        }
+
+        function createBtn(top, left, id, side, svg) {
+            const btn = document.createElement('div');
+            btn.className = 'action-btn';
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg>`;
+            btn.onclick = (e) => { e.stopPropagation(); resolveConflict(id, side); };
+            Object.assign(btn.style, { top: top+'px', left: left+'px' });
+            actionsOverlay.appendChild(btn);
+        }
+
+        window.resolveConflict = (id, side) => {
+            const idx = DIFF_MAPPING.findIndex(d => d.id === id);
+            if (idx === -1) return;
+            const d = DIFF_MAPPING[idx];
+            
+            const txt = (side === 'left' ? LEFT_LINES.slice(d.left.start, d.left.end+1) : RIGHT_LINES.slice(d.right.start, d.right.end+1)).join('\n');
+            const range = new monaco.Range(d.center.start + 1, 1, d.center.end + 1, 9999);
+            
+            editorCenter.pushUndoStop();
+            editorCenter.executeEdits('merge', [{ range, text: txt, forceMoveMarkers: true }]);
+            editorCenter.pushUndoStop();
+
+            d.resolvedSide = side;
+            captureResolvedState(editorCenter.getModel().getAlternativeVersionId());
+            updateDecorations(); drawLayerElements(); updateActionButtons();
+        };
+    </script>
+</body>
+</html>
