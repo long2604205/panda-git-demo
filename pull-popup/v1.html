@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pull Changes Modal - Compact</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- COPY BASE CSS --- */
+        :root {
+            --p-bg-app: #0f1115;
+            --p-bg-sidebar: #131519;
+            --p-bg-activity: #181a20;
+            --p-bg-status: #007acc;
+            --p-bg-status-dark: #181a20;
+            --p-border: #2a2d35;
+            --p-highlight: #22d3ee;
+            --p-hover: #2a2d35;
+            --p-selection: rgba(34, 211, 238, 0.1);
+            --p-text-main: #e2e8f0;
+            --p-text-muted: #94a3b8;
+            --p-text-dim: #64748b;
+            --resizer-hover: #22d3ee;
+            --modal-bg: #181a20;
+            --modal-overlay: rgba(0, 0, 0, 0.6);
+            --p-cyan-btn: #22d3ee;
+            --p-pink-btn: #e879f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-main: var(--p-bg-app);
+            --bg-side: var(--p-bg-sidebar);
+            --bg-header: var(--p-bg-activity);
+            --bg-status: var(--p-bg-status-dark);
+            --border-color: var(--p-border);
+            --text-color: var(--p-text-main);
+            --accent-color: var(--p-highlight);
+            --input-bg: #0f1115;
+            --modal-bg: #181a20;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-color);
+            font-family: "Be Vietnam Pro", sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- MODAL CORE --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: var(--modal-overlay);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-window {
+            background-color: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            width: 460px; /* Nhỏ gọn hơn (cũ 600px) */
+            max-width: 90%;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.open .modal-window {
+            transform: scale(1) translateY(0);
+        }
+
+        /* --- FORM ELEMENTS --- */
+        .input-group-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--p-text-dim);
+            margin-bottom: 4px; /* Giảm margin */
+            display: block;
+        }
+
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+        }
+
+        /* Strategy Cards (Radio Style - Compact) */
+        .strategy-card {
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-side);
+            border-radius: 5px;
+            padding: 8px 10px; /* Giảm padding */
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .strategy-card:hover {
+            border-color: var(--p-text-dim);
+            background-color: var(--p-hover);
+        }
+
+        .strategy-input:checked + .strategy-card {
+            border-color: var(--accent-color);
+            background-color: rgba(34, 211, 238, 0.05);
+        }
+
+        .strategy-input:checked + .strategy-card::after {
+            content: '\f00c';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            color: var(--accent-color);
+            font-size: 10px;
+        }
+
+        .strategy-card h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 2px;
+        }
+
+        .strategy-card p {
+            font-size: 10px;
+            color: var(--p-text-dim);
+            line-height: 1.3;
+        }
+
+        /* Styled Checkbox */
+        .option-checkbox {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--p-text-dim);
+            border-radius: 3px;
+            background-color: var(--input-bg);
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .option-checkbox:checked {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .option-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .option-item:hover {
+            background-color: var(--p-hover);
+        }
+
+        .option-text {
+            font-size: 11px;
+            color: var(--p-text-muted);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 6px 14px; /* Nút nhỏ hơn */
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary { background: var(--accent-color); color: #000; font-weight: 600; }
+        .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 10px rgba(34, 211, 238, 0.2); }
+        .btn-secondary { border-color: var(--border-color); color: var(--text-color); }
+        .btn-secondary:hover { background: var(--p-hover); border-color: var(--p-text-muted); }
+    </style>
+</head>
+<body data-theme="dark" class="flex items-center justify-center bg-[var(--bg-main)]">
+
+<!-- Trigger -->
+<button onclick="toggleModal(true)" class="btn btn-primary">
+    <i class="fa-solid fa-code-branch"></i> Pull Changes
+</button>
+
+<!-- MODAL -->
+<div id="pullModal" class="modal-overlay">
+    <div class="modal-window">
+
+        <!-- HEADER -->
+        <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--border-color)]">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-arrow-down-long text-[var(--accent-color)] text-xs"></i>
+                <h3 class="font-bold text-xs text-[var(--text-color)] uppercase tracking-wide">
+                    Pull Changes
+                </h3>
+            </div>
+            <i class="fa-solid fa-xmark cursor-pointer text-[var(--p-text-dim)] hover:text-[var(--text-color)] text-sm transition-colors" onclick="toggleModal(false)"></i>
+        </div>
+
+        <!-- BODY -->
+        <div class="p-4 flex flex-col gap-4 overflow-y-auto max-h-[80vh]">
+
+            <!-- SECTION 1: REMOTE & BRANCH -->
+            <div class="grid grid-cols-12 gap-3">
+                <div class="col-span-5">
+                    <label class="input-group-label">Remote</label>
+                    <select class="custom-select w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-color)] text-xs rounded px-2.5 py-1.5 outline-none focus:border-[var(--accent-color)] transition-colors">
+                        <option value="origin">origin</option>
+                        <option value="upstream">upstream</option>
+                    </select>
+                </div>
+
+                <div class="col-span-7">
+                    <label class="input-group-label">Branch to merge</label>
+                    <div class="flex gap-2">
+                        <select class="custom-select w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-color)] text-xs rounded px-2.5 py-1.5 outline-none focus:border-[var(--accent-color)] transition-colors font-mono">
+                            <option value="main">main</option>
+                            <option value="develop">develop</option>
+                            <option value="feature/new-ui">feature/new-ui</option>
+                        </select>
+                        <div class="flex items-center px-2 bg-[var(--bg-side)] border border-[var(--border-color)] rounded text-[var(--p-text-dim)] text-[10px] whitespace-nowrap" title="Target Branch">
+                            <i class="fa-solid fa-arrow-right mr-1.5"></i>
+                            <span class="font-mono text-[var(--accent-color)]">HEAD</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: STRATEGY (COMPACT) -->
+            <div>
+                <label class="input-group-label mb-1.5">Pull Strategy</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <!-- Option: Merge -->
+                    <label class="relative h-14"> <!-- Fixed height for consistency -->
+                        <input type="radio" name="strategy" value="merge" class="strategy-input hidden" checked>
+                        <div class="strategy-card">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <i class="fa-solid fa-code-merge text-[var(--p-pink-btn)] text-xs"></i>
+                                <h4>Merge</h4>
+                            </div>
+                            <p>Combine with merge commit.</p>
+                        </div>
+                    </label>
+
+                    <!-- Option: Rebase -->
+                    <label class="relative h-14">
+                        <input type="radio" name="strategy" value="rebase" class="strategy-input hidden">
+                        <div class="strategy-card">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <i class="fa-solid fa-list-ol text-[var(--accent-color)] text-xs"></i>
+                                <h4>Rebase</h4>
+                            </div>
+                            <p>Replay commits on top.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECTION 3: OPTIONS (COMPACT GRID) -->
+            <div>
+                <label class="input-group-label mb-1.5">Advanced Options</label>
+                <div class="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                    <label class="option-item">
+                        <input type="checkbox" class="option-checkbox" checked>
+                        <span class="option-text">Prune remote branches</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" class="option-checkbox">
+                        <span class="option-text">Autostash (stash & pop)</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" class="option-checkbox">
+                        <span class="option-text">Fast-forward only</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" class="option-checkbox">
+                        <span class="option-text">Squash commits</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" class="option-checkbox">
+                        <span class="option-text">No commit</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" class="option-checkbox">
+                        <span class="option-text">Fetch only</span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="px-4 py-3 border-t border-[var(--border-color)] bg-[var(--bg-side)] rounded-b-lg flex justify-between items-center">
+            <div class="text-[10px] text-[var(--p-text-dim)] font-mono">
+                <i class="fa-solid fa-terminal mr-1"></i>
+                git pull origin main
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="toggleModal(false)">Cancel</button>
+                <button class="btn btn-primary" onclick="handlePull()">
+                    Pull
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('pullModal');
+
+    function toggleModal(show) {
+        if (show) {
+            modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => modal.classList.add('open'));
+        } else {
+            modal.classList.remove('open');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+    }
+
+    function handlePull() {
+        const btn = document.querySelector('.btn-primary');
+        const originalContent = btn.innerHTML;
+
+        const isRebase = document.querySelector('input[name="strategy"][value="rebase"]').checked;
+        const actionText = isRebase ? 'Rebasing...' : 'Merging...';
+
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> ${actionText}`;
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            toggleModal(false);
+        }, 1500);
+    }
+
+    modal.classList.add('hidden');
+</script>
+</body>
+</html>
