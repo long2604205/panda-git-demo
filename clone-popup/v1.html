@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clone Repository Modal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- COPY BASE CSS --- */
+        :root {
+            --p-bg-app: #0f1115;
+            --p-bg-sidebar: #131519;
+            --p-bg-activity: #181a20;
+            --p-bg-status: #007acc;
+            --p-bg-status-dark: #181a20;
+            --p-border: #2a2d35;
+            --p-highlight: #22d3ee;
+            --p-hover: #2a2d35;
+            --p-selection: rgba(34, 211, 238, 0.1);
+            --p-text-main: #e2e8f0;
+            --p-text-muted: #94a3b8;
+            --p-text-dim: #64748b;
+            --resizer-hover: #22d3ee;
+            --modal-bg: #181a20;
+            --modal-overlay: rgba(0, 0, 0, 0.6);
+            --p-cyan-btn: #22d3ee;
+            --p-pink-btn: #e879f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-main: var(--p-bg-app);
+            --bg-side: var(--p-bg-sidebar);
+            --bg-header: var(--p-bg-activity);
+            --bg-status: var(--p-bg-status-dark);
+            --border-color: var(--p-border);
+            --text-color: var(--p-text-main);
+            --accent-color: var(--p-highlight);
+            --input-bg: #0f1115;
+            --modal-bg: #181a20;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-color);
+            font-family: "Be Vietnam Pro", sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- MODAL CORE --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: var(--modal-overlay);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-window {
+            background-color: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            width: 600px;
+            max-width: 95%;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-overlay.open .modal-window {
+            transform: scale(1) translateY(0);
+        }
+
+        /* --- FORM ELEMENTS --- */
+        .input-group-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--p-text-dim);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .custom-input {
+            width: 100%;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-size: 12px;
+            border-radius: 4px;
+            padding: 7px 10px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .custom-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .custom-input::placeholder {
+            color: var(--p-text-dim);
+            opacity: 0.5;
+        }
+
+        /* --- HISTORY LIST ITEM --- */
+        .history-item {
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-item:hover {
+            background-color: var(--p-hover);
+            border-color: var(--border-color);
+        }
+
+        .history-icon {
+            color: var(--p-text-dim);
+            font-size: 14px;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .history-item:hover .history-icon {
+            color: var(--text-color);
+        }
+
+        /* Updated history url style */
+        .history-url {
+            font-size: 11px; /* Slightly larger since it's the only text */
+            color: var(--text-color); /* Main text color */
+            font-family: "JetBrains Mono", monospace;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 190px;
+        }
+
+        /* Scrollbar for history */
+        .history-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--p-hover);
+            border-radius: 2px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary { background: var(--accent-color); color: #000; font-weight: 600; }
+        .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 10px rgba(34, 211, 238, 0.2); }
+        .btn-secondary { border-color: var(--border-color); color: var(--text-color); }
+        .btn-secondary:hover { background: var(--p-hover); border-color: var(--p-text-muted); }
+    </style>
+</head>
+<body data-theme="dark" class="flex items-center justify-center bg-[var(--bg-main)]">
+
+<!-- Trigger -->
+<button onclick="toggleModal(true)" class="btn btn-primary">
+    <i class="fa-solid fa-cloud-arrow-down"></i> Clone Repository
+</button>
+
+<!-- MODAL -->
+<div id="cloneModal" class="modal-overlay">
+    <div class="modal-window">
+
+        <!-- HEADER -->
+        <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--border-color)] bg-[var(--modal-bg)]">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-clone text-[var(--accent-color)] text-xs"></i>
+                <h3 class="font-bold text-xs text-[var(--text-color)] uppercase tracking-wide">
+                    Clone Repository
+                </h3>
+            </div>
+            <i class="fa-solid fa-xmark cursor-pointer text-[var(--p-text-dim)] hover:text-[var(--text-color)] text-sm transition-colors" onclick="toggleModal(false)"></i>
+        </div>
+
+        <!-- BODY: SPLIT LAYOUT -->
+        <div class="flex h-[240px]"> <!-- Set fixed height for consistency -->
+
+            <!-- LEFT COLUMN: INPUTS (60%) -->
+            <div class="w-[60%] p-5 flex flex-col justify-center gap-5 border-r border-[var(--border-color)]">
+
+                <!-- URL Input -->
+                <div>
+                    <label class="input-group-label">Repository URL</label>
+                    <div class="relative">
+                        <i class="fa-brands fa-git-alt absolute left-2.5 top-2.5 text-[var(--p-text-dim)] text-xs"></i>
+                        <input type="text" id="repoUrl"
+                               class="custom-input pl-8 font-mono"
+                               placeholder="https://github.com/username/repo.git"
+                               oninput="autoFillName()">
+                    </div>
+                </div>
+
+                <!-- Destination Path -->
+                <div>
+                    <label class="input-group-label">Parent Directory</label>
+                    <div class="flex gap-2">
+                        <input type="text" class="custom-input font-mono text-[var(--p-text-dim)]" value="~/Projects/Work" readonly>
+                        <button class="btn btn-secondary px-3" title="Browse...">
+                            <i class="fa-regular fa-folder-open"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Directory Name -->
+                <div>
+                    <label class="input-group-label">Directory Name</label>
+                    <input type="text" id="dirName" class="custom-input font-mono text-[var(--accent-color)]" placeholder="repository-name">
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: HISTORY (40%) -->
+            <div class="w-[40%] bg-[var(--bg-side)] flex flex-col">
+                <div class="px-4 py-3 border-b border-[var(--border-color)] border-opacity-50">
+                    <label class="input-group-label mb-0">Recent History</label>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-2 history-list">
+
+                    <!-- History Item 1 -->
+                    <div class="history-item" onclick="fillFromHistory('https://github.com/vuejs/core.git')">
+                        <i class="fa-brands fa-github history-icon"></i>
+                        <div class="min-w-0">
+                            <span class="history-url">https://github.com/vuejs/core.git</span>
+                        </div>
+                    </div>
+
+                    <!-- History Item 2 -->
+                    <div class="history-item" onclick="fillFromHistory('https://gitlab.com/org/backend-api.git')">
+                        <i class="fa-brands fa-gitlab text-[#fc6d26] history-icon"></i>
+                        <div class="min-w-0">
+                            <span class="history-url">https://gitlab.com/org/backend-api.git</span>
+                        </div>
+                    </div>
+
+                    <!-- History Item 3 -->
+                    <div class="history-item" onclick="fillFromHistory('https://github.com/tailwindlabs/tailwindcss.git')">
+                        <i class="fa-brands fa-github history-icon"></i>
+                        <div class="min-w-0">
+                            <span class="history-url">https://github.com/tailwindlabs/tailwindcss.git</span>
+                        </div>
+                    </div>
+
+                    <!-- History Item 4 -->
+                    <div class="history-item" onclick="fillFromHistory('https://bitbucket.org/company/legacy-app.git')">
+                        <i class="fa-brands fa-bitbucket text-[#2684ff] history-icon"></i>
+                        <div class="min-w-0">
+                            <span class="history-url">https://bitbucket.org/company/legacy-app.git</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="px-4 py-3 border-t border-[var(--border-color)] bg-[var(--modal-bg)] flex justify-end gap-3">
+            <button class="btn btn-secondary" onclick="toggleModal(false)">Cancel</button>
+            <button class="btn btn-primary" onclick="handleClone()">
+                Clone
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('cloneModal');
+    const repoUrlInput = document.getElementById('repoUrl');
+    const dirNameInput = document.getElementById('dirName');
+
+    function toggleModal(show) {
+        if (show) {
+            modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => modal.classList.add('open'));
+            setTimeout(() => repoUrlInput.focus(), 100);
+        } else {
+            modal.classList.remove('open');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+    }
+
+    // Auto extract repository name from URL
+    function extractName(url) {
+        if (!url) return '';
+        const match = url.match(/\/([^\/]+?)(\.git)?$/);
+        return (match && match[1]) ? match[1] : '';
+    }
+
+    function autoFillName() {
+        const name = extractName(repoUrlInput.value);
+        if (name) dirNameInput.value = name;
+    }
+
+    // Fill data when clicking history item
+    function fillFromHistory(url) {
+        repoUrlInput.value = url;
+        autoFillName();
+
+        // Highlight effect for input
+        repoUrlInput.style.borderColor = 'var(--accent-color)';
+        setTimeout(() => {
+            repoUrlInput.style.borderColor = '';
+        }, 300);
+    }
+
+    function handleClone() {
+        const btn = document.querySelector('.btn-primary');
+        const originalContent = btn.innerHTML;
+
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Cloning...`;
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            toggleModal(false);
+        }, 2000);
+    }
+
+    modal.classList.add('hidden');
+</script>
+</body>
+</html>
