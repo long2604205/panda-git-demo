@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git UI - Settings Pro</title>
+
+    <!-- Import Fonts: Added Fira Code, Source Code Pro, Lora, Roboto, Lato -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Lato:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Roboto:wght@400;500;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ================================
+           🎨 BASE VARIABLES
+        ================================ */
+        :root {
+            /* Shared Colors */
+            --c-blue-600: #007acc;
+
+            /* Dynamic Font Sizes */
+            --fz-tiny: 10px;
+            --fz-small: 11px;
+            --fz-base: 12px;
+            --fz-medium: 13px;
+        }
+
+        /* ================================
+           🌙 DARK THEMES
+        ================================ */
+
+        /* 1. Dark Default (Graphite) */
+        [data-theme="dark-graphite"] {
+            --bg-main: #0f1115;
+            --bg-side: #131519;
+            --bg-header: #181a20;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --border: #2a2d35;
+            --accent: #22d3ee; /* Cyan */
+            --hover: #2a2d35;
+            --selection: rgba(34, 211, 238, 0.15);
+            --modal-bg: #181a20;
+            --input-bg: #0f1115;
+            --modal-overlay: rgba(0, 0, 0, 0.7);
+        }
+
+        /* 2. Dark Ocean (Deep Blue/Slate) */
+        [data-theme="dark-ocean"] {
+            --bg-main: #0f172a; /* Slate 900 */
+            --bg-side: #1e293b; /* Slate 800 */
+            --bg-header: #334155;
+            --text-main: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --text-dim: #64748b;
+            --border: #334155;
+            --accent: #818cf8; /* Indigo */
+            --hover: #334155;
+            --selection: rgba(129, 140, 248, 0.15);
+            --modal-bg: #1e293b;
+            --input-bg: #0f172a;
+            --modal-overlay: rgba(15, 23, 42, 0.8);
+        }
+
+        /* 3. Dark OLED (True Black/High Contrast) */
+        [data-theme="dark-oled"] {
+            --bg-main: #000000;
+            --bg-side: #111111;
+            --bg-header: #111111;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --text-dim: #666666;
+            --border: #333333;
+            --accent: #4ade80; /* Green */
+            --hover: #262626;
+            --selection: rgba(74, 222, 128, 0.2);
+            --modal-bg: #111111;
+            --input-bg: #000000;
+            --modal-overlay: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ================================
+           ☀️ LIGHT THEMES
+        ================================ */
+
+        /* 4. Light Default (Clean) */
+        [data-theme="light-default"] {
+            --bg-main: #ffffff;
+            --bg-side: #f3f4f6;
+            --bg-header: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --text-dim: #9ca3af;
+            --border: #e5e7eb;
+            --accent: #0284c7; /* Sky Blue */
+            --hover: #f3f4f6;
+            --selection: #e0f2fe;
+            --modal-bg: #ffffff;
+            --input-bg: #ffffff;
+            --modal-overlay: rgba(0, 0, 0, 0.2);
+        }
+
+        /* 5. Light Warm (Solarized/Sepia) */
+        [data-theme="light-warm"] {
+            --bg-main: #fdf6e3;
+            --bg-side: #eee8d5;
+            --bg-header: #eee8d5;
+            --text-main: #433422; /* Brownish */
+            --text-muted: #657b83;
+            --text-dim: #93a1a1;
+            --border: #d6d3c0;
+            --accent: #d33682; /* Magenta/Pink */
+            --hover: #e6e1cf;
+            --selection: rgba(211, 54, 130, 0.1);
+            --modal-bg: #fdf6e3;
+            --input-bg: #ffffff;
+            --modal-overlay: rgba(67, 52, 34, 0.3);
+        }
+
+        /* 6. Light Nordic (Snow/Cool) */
+        [data-theme="light-nordic"] {
+            --bg-main: #eceff4;
+            --bg-side: #d8dee9;
+            --bg-header: #e5e9f0;
+            --text-main: #2e3440;
+            --text-muted: #4c566a;
+            --text-dim: #949a9f;
+            --border: #d8dee9;
+            --accent: #5e81ac; /* Nord Blue */
+            --hover: #d8dee9;
+            --selection: #d0dff5;
+            --modal-bg: #eceff4;
+            --input-bg: #ffffff;
+            --modal-overlay: rgba(46, 52, 64, 0.4);
+        }
+
+        /* ================================
+           🌐 GLOBAL CSS
+        ================================ */
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: "Be Vietnam Pro", sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .font-mono { font-family: "JetBrains Mono", monospace; }
+
+        /* Typography & Components using Dynamic Sizes */
+        .group-header {
+            display: flex; align-items: center; padding: 6px 12px;
+            font-size: var(--fz-small); font-weight: 600; color: var(--text-muted);
+            cursor: pointer; user-select: none;
+        }
+        .group-header:hover { color: var(--text-main); }
+        .group-header .arrow { margin-right: 6px; font-size: var(--fz-tiny); }
+
+        .repo-item {
+            padding: 6px 12px 6px 28px;
+            font-size: var(--fz-base); cursor: pointer; display: flex; align-items: center;
+            color: var(--text-muted); border-left: 2px solid transparent;
+        }
+        .repo-item:hover { background-color: var(--hover); color: var(--text-main); }
+        .repo-item.active { background-color: var(--selection); color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+        .branch-item {
+            padding: 5px 12px;
+            font-size: var(--fz-base); cursor: pointer; display: flex; align-items: center; color: var(--text-muted);
+        }
+        .branch-item:hover { background-color: var(--hover); color: var(--text-main); }
+        .branch-item.active-branch { color: var(--accent); font-weight: 500; }
+
+        .sidebar-section-title {
+            font-size: var(--fz-tiny); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-dim); padding: 8px 12px; background-color: var(--bg-side);
+            position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between;
+        }
+
+        .search-box { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+        .search-input {
+            width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 4px;
+            background: var(--input-bg); border: 1px solid var(--border);
+            color: var(--text-main); outline: none; font-size: var(--fz-small);
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: var(--accent); }
+
+        .tree-checkbox {
+            appearance: none; width: 14px; height: 14px; border: 1px solid var(--text-dim);
+            border-radius: 3px; background-color: transparent; margin-right: 8px;
+            position: relative; cursor: pointer; flex-shrink: 0;
+        }
+        .tree-checkbox:checked { background-color: var(--accent); border-color: var(--accent); }
+        .tree-checkbox:checked::after {
+            content: '✓'; position: absolute; top: -3px; left: 2px;
+            font-size: 10px; color: var(--bg-main); font-weight: bold;
+        }
+
+        .btn { padding: 6px 12px; border-radius: 4px; font-size: var(--fz-base); font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+        .btn-primary { background-color: var(--accent); color: var(--bg-main); font-weight: 600; }
+        /* Fix contrast for OLED theme on primary buttons */
+        [data-theme="dark-oled"] .btn-primary { color: #000; }
+        [data-theme="dark-ocean"] .btn-primary { color: #fff; }
+
+        .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 10px var(--selection); }
+        .btn-icon { background: transparent; color: var(--text-muted); padding: 4px; font-size: 16px; border: none; cursor: pointer; }
+        .btn-icon:hover { color: var(--text-main); background: var(--hover); border-radius: 4px; }
+
+        .app-container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 250px; background: var(--bg-side); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-content { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
+        .top-bar { height: 40px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--bg-header); }
+        .content-area { padding: 20px; overflow: auto; }
+
+        /* ================================
+           🛠 SETTINGS MODAL STYLES
+        ================================ */
+        .modal-overlay {
+            position: fixed; inset: 0; background-color: var(--modal-overlay);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(2px);
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+        .settings-modal {
+            background: var(--modal-bg); border: 1px solid var(--border);
+            width: 450px; /* Slightly wider for new grid */
+            max-width: 90vw; border-radius: 8px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex; flex-direction: column;
+            transform: translateY(10px); transition: transform 0.2s;
+        }
+        .modal-overlay.open .settings-modal { transform: translateY(0); }
+
+        .modal-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-weight: 600; font-size: 14px; margin: 0; }
+        .modal-body { padding: 16px; display: flex; flex-direction: column; gap: 20px; }
+
+        .setting-group { display: flex; flex-direction: column; gap: 8px; }
+        .setting-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* THEME GRID - 3 Columns */
+        .theme-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .theme-option {
+            border: 2px solid var(--border); border-radius: 6px; padding: 8px; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .theme-option:hover { background: var(--hover); transform: translateY(-1px); }
+        .theme-option.active { border-color: var(--accent); background: var(--selection); }
+
+        .theme-preview-box {
+            width: 100%; height: 24px; border-radius: 4px;
+            display: flex; border: 1px solid rgba(128,128,128,0.2);
+        }
+        .theme-preview-sidebar { width: 30%; height: 100%; border-right: 1px solid rgba(128,128,128,0.1); }
+        .theme-name { font-size: 11px; font-weight: 500; text-align: center; }
+
+        /* Dropdown Select Styles */
+        .setting-select {
+            width: 100%; padding: 8px; border-radius: 4px;
+            background: var(--input-bg); border: 1px solid var(--border);
+            color: var(--text-main); font-size: 12px; outline: none;
+            cursor: pointer;
+        }
+        .setting-select:focus { border-color: var(--accent); }
+
+        .range-container { display: flex; align-items: center; gap: 12px; }
+        .range-slider {
+            flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px;
+            background: var(--border); outline: none;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--accent); cursor: pointer;
+            border: 2px solid var(--bg-main); box-shadow: 0 0 0 1px var(--border);
+        }
+        .range-value { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--text-main); width: 40px; text-align: right; }
+
+        .modal-footer {
+            padding: 12px 16px; border-top: 1px solid var(--border);
+            display: flex; justify-content: flex-end; gap: 8px;
+            background: var(--bg-side); border-radius: 0 0 8px 8px;
+        }
+
+    </style>
+</head>
+<body data-theme="dark-graphite">
+
+<!-- APP STRUCTURE -->
+<div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-section-title">Repositories</div>
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="Filter repositories...">
+        </div>
+
+        <div class="group-header">
+            <span class="arrow">▼</span>
+            <span>Work Projects</span>
+        </div>
+
+        <div class="repo-item active">
+            <input type="checkbox" class="tree-checkbox" checked>
+            <span>react-dashboard-ui</span>
+        </div>
+
+        <div class="repo-item">
+            <input type="checkbox" class="tree-checkbox">
+            <span>backend-api-service</span>
+        </div>
+
+        <div class="group-header" style="margin-top: 10px;">
+            <span class="arrow">▶</span>
+            <span>Open Source</span>
+        </div>
+
+        <div class="sidebar-section-title" style="margin-top: auto;">Local Changes</div>
+        <div class="branch-item active-branch">
+            <span style="margin-right:6px">🌿</span> feature/multi-theme-support
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div style="font-weight:600; font-size: var(--fz-base);">Settings Pro Demo</div>
+            <button class="btn btn-primary" id="openSettingsBtn">⚙️ Appearance</button>
+        </div>
+        <div class="content-area">
+            <h2 style="margin-top:0;">Git Client UI</h2>
+            <p style="color: var(--text-muted); line-height: 1.6; font-size: var(--fz-medium);">
+                Bản cập nhật mới với nhiều tùy chọn cá nhân hóa hơn.
+            </p>
+
+            <h3 style="font-size: var(--fz-medium); margin-bottom: 8px;">Theme Preview</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div style="padding: 10px; background: var(--bg-side); border: 1px solid var(--border); border-radius: 6px; flex: 1;">
+                    <div style="font-size: var(--fz-small); color: var(--text-dim); margin-bottom: 4px;">FILE STATUS</div>
+                    <div style="color: var(--accent);">Modified (2)</div>
+                </div>
+                <div style="padding: 10px; background: var(--bg-side); border: 1px solid var(--border); border-radius: 6px; flex: 1;">
+                    <div style="font-size: var(--fz-small); color: var(--text-dim); margin-bottom: 4px;">STASH</div>
+                    <div style="color: var(--text-main);">WIP: Login fix</div>
+                </div>
+            </div>
+
+            <div style="padding: 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-side);">
+                <code class="font-mono" style="color: var(--accent);">git config --global user.theme "auto"</code>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================
+     POPUP / MODAL SETTINGS
+================================ -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="settings-modal">
+        <div class="modal-header">
+            <div class="modal-title">Appearance</div>
+            <button class="btn-icon" id="closeSettingsBtn">✕</button>
+        </div>
+
+        <div class="modal-body">
+
+            <!-- 1. Dark Themes -->
+            <div class="setting-group">
+                <label class="setting-label">Dark Themes</label>
+                <div class="theme-grid">
+                    <!-- Dark 1: Graphite -->
+                    <div class="theme-option" data-value="dark-graphite" onclick="uiManager.setTheme('dark-graphite')">
+                        <div class="theme-preview-box" style="background:#0f1115;">
+                            <div class="theme-preview-sidebar" style="background:#131519;"></div>
+                        </div>
+                        <span class="theme-name">Graphite</span>
+                    </div>
+                    <!-- Dark 2: Ocean -->
+                    <div class="theme-option" data-value="dark-ocean" onclick="uiManager.setTheme('dark-ocean')">
+                        <div class="theme-preview-box" style="background:#0f172a;">
+                            <div class="theme-preview-sidebar" style="background:#1e293b;"></div>
+                        </div>
+                        <span class="theme-name">Ocean</span>
+                    </div>
+                    <!-- Dark 3: OLED -->
+                    <div class="theme-option" data-value="dark-oled" onclick="uiManager.setTheme('dark-oled')">
+                        <div class="theme-preview-box" style="background:#000;">
+                            <div class="theme-preview-sidebar" style="background:#111;"></div>
+                        </div>
+                        <span class="theme-name">OLED</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Light Themes -->
+            <div class="setting-group" style="margin-top: 4px;">
+                <label class="setting-label">Light Themes</label>
+                <div class="theme-grid">
+                    <!-- Light 1: Default -->
+                    <div class="theme-option" data-value="light-default" onclick="uiManager.setTheme('light-default')">
+                        <div class="theme-preview-box" style="background:#fff; border-color:#ddd;">
+                            <div class="theme-preview-sidebar" style="background:#f3f4f6;"></div>
+                        </div>
+                        <span class="theme-name">Classic</span>
+                    </div>
+                    <!-- Light 2: Warm -->
+                    <div class="theme-option" data-value="light-warm" onclick="uiManager.setTheme('light-warm')">
+                        <div class="theme-preview-box" style="background:#fdf6e3; border-color:#d6d3c0;">
+                            <div class="theme-preview-sidebar" style="background:#eee8d5;"></div>
+                        </div>
+                        <span class="theme-name">Warm</span>
+                    </div>
+                    <!-- Light 3: Nordic -->
+                    <div class="theme-option" data-value="light-nordic" onclick="uiManager.setTheme('light-nordic')">
+                        <div class="theme-preview-box" style="background:#eceff4; border-color:#d8dee9;">
+                            <div class="theme-preview-sidebar" style="background:#d8dee9;"></div>
+                        </div>
+                        <span class="theme-name">Nordic</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Font Family (Dropdown) -->
+            <div class="setting-group">
+                <label class="setting-label">Typography</label>
+                <select class="setting-select" id="fontSelect" onchange="uiManager.setFont(this.value)">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+
+            <!-- 4. Font Size -->
+            <div class="setting-group">
+                <label class="setting-label">Interface Zoom</label>
+                <div class="range-container">
+                    <span style="font-size: 10px; color: var(--text-dim);">A</span>
+                    <input type="range" class="range-slider" id="sizeRange" min="10" max="15" step="1" value="12" oninput="uiManager.setSize(this.value)">
+                    <span style="font-size: 14px; color: var(--text-main);">A</span>
+                    <div class="range-value" id="sizeDisplay">12px</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="uiManager.resetDefaults()">Reset</button>
+            <button class="btn btn-primary" onclick="uiManager.close()">Done</button>
+        </div>
+    </div>
+</div>
+
+<!-- LOGIC JS -->
+<script>
+    const uiManager = {
+        config: {
+            theme: 'dark-graphite',
+            fontFamily: "'Be Vietnam Pro', sans-serif",
+            baseSize: 12
+        },
+
+        fonts: [
+            { name: 'Be Vietnam Pro', value: "'Be Vietnam Pro', sans-serif", type: 'Sans' },
+            { name: 'Inter', value: "'Inter', sans-serif", type: 'Sans' },
+            { name: 'Roboto', value: "'Roboto', sans-serif", type: 'Sans' },
+            { name: 'Lato', value: "'Lato', sans-serif", type: 'Sans' },
+            { name: 'JetBrains Mono', value: "'JetBrains Mono', monospace", type: 'Mono' },
+            { name: 'Fira Code', value: "'Fira Code', monospace", type: 'Mono' },
+            { name: 'Source Code', value: "'Source Code Pro', monospace", type: 'Mono' },
+            { name: 'Lora (Serif)', value: "'Lora', serif", type: 'Serif' }
+        ],
+
+        init() {
+            // Render Font Select
+            this.renderFontSelect();
+
+            const savedConfig = localStorage.getItem('git-ui-pro-config');
+            if (savedConfig) {
+                this.config = { ...this.config, ...JSON.parse(savedConfig) };
+            }
+
+            this.setTheme(this.config.theme, false);
+            this.setFont(this.config.fontFamily, false);
+            this.setSize(this.config.baseSize, false);
+            document.getElementById('sizeRange').value = this.config.baseSize;
+
+            this.bindEvents();
+        },
+
+        renderFontSelect() {
+            const select = document.getElementById('fontSelect');
+            select.innerHTML = this.fonts.map(font => `
+                    <option value="${font.value}">${font.name} (${font.type})</option>
+                `).join('');
+        },
+
+        bindEvents() {
+            const modal = document.getElementById('settingsModal');
+            document.getElementById('openSettingsBtn').addEventListener('click', () => modal.classList.add('open'));
+            document.getElementById('closeSettingsBtn').addEventListener('click', () => this.close());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) this.close();
+            });
+        },
+
+        close() {
+            document.getElementById('settingsModal').classList.remove('open');
+            this.save();
+        },
+
+        save() {
+            localStorage.setItem('git-ui-pro-config', JSON.stringify(this.config));
+        },
+
+        setTheme(themeName, save = true) {
+            document.body.setAttribute('data-theme', themeName);
+
+            // Active class handling
+            document.querySelectorAll('.theme-option').forEach(el => {
+                el.classList.toggle('active', el.dataset.value === themeName);
+            });
+
+            if (save) {
+                this.config.theme = themeName;
+                this.save();
+            }
+        },
+
+        setFont(fontValue, save = true) {
+            document.body.style.fontFamily = fontValue;
+
+            // Update Select value
+            const select = document.getElementById('fontSelect');
+            if (select) select.value = fontValue;
+
+            if (save) {
+                this.config.fontFamily = fontValue;
+                this.save();
+            }
+        },
+
+        setSize(val, save = true) {
+            const base = parseInt(val);
+            const root = document.documentElement;
+
+            root.style.setProperty('--fz-tiny', (base - 2) + 'px');
+            root.style.setProperty('--fz-small', (base - 1) + 'px');
+            root.style.setProperty('--fz-base', base + 'px');
+            root.style.setProperty('--fz-medium', (base + 1) + 'px');
+
+            document.getElementById('sizeDisplay').innerText = base + 'px';
+
+            if (save) {
+                this.config.baseSize = base;
+                this.save();
+            }
+        },
+
+        resetDefaults() {
+            this.setTheme('dark-graphite');
+            this.setFont("'Be Vietnam Pro', sans-serif");
+            this.setSize(12);
+            document.getElementById('sizeRange').value = 12;
+        }
+    };
+
+    uiManager.init();
+</script>
+</body>
+</html>
